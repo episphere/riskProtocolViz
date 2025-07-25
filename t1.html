@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <input type="number" min=0 max="10" id="year">
+    <div><kbd id="out"></kbd></div>
+    <script type="module">
+        let sc = await import("./scenarios.js")
+        console.log(sc.tests.Colposcopy.probabilities())
+        console.log(sc.newScenarios)
+        const out=document.getElementById("out")
+        document.getElementById("year").addEventListener("change",(event)=>{
+            let testName = sc.newScenarios.scenario4.test
+            let probs = sc.tests[testName].probabilities(event.target.value)
+            out.innerText = `Scenario: ${sc.newScenarios.scenario4.scenarioName}
+        ${JSON.stringify(probs,null,10)}
+            `
+
+        })
+        document.getElementById("year").value=0;
+    </script>
+</body>
+</html>
