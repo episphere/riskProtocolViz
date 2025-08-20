@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .scenario {
+            font-size: 2vw;
+            margin: 5px;
+            padding: 5px;
+        }
+        .test {
+            font-size: 2vw;
+        }
+        .test td {
+            padding-left: 50px;
+            padding-right: 50px;
+        }
+        .test td input{
+            font-size: 2vw;
+            padding: 10px;
+        }
+        .keyrow td{
+            padding-top: 20px;
+        }
+
+    </style>
+    <title>Document</title>
+</head>
+<body>
+    <div id="out"></div>
+
+
+    <script type="module">
+        import {Test} from "../test.js"
+        import { Sample, Multisample } from '../sample.js'
+        import {testMap,newScenarios as scenarios} from '../scenarios.js'
+
+
+        let t = {
+            "testName": "Primary_HPV",
+            "outcomes": ["HPV_NEGATIVE", "HPV_POSITIVE"],
+            "default_param": {
+                CIN2:{ sensativity: 0.9766945700, specificity: 0.9283468213, followup_specificity: 0.575 },
+                CIN3:{ sensativity: 0.9709464567 }
+            },
+            "probabilities": function (year, params = {}) {
+                if (year == 0) {
+                    return {
+                        CIN_LT_2: { "HPV_NEGATIVE": this.default_param.CIN2.specificity, "HPV_POSITIVE": 1 - this.default_param.CIN2.specificity },
+                        CIN2: { "HPV_NEGATIVE": 1 - this.default_param.CIN2.sensativity, "HPV_POSITIVE": this.default_param.CIN2.sensativity },
+                        CIN3: { "HPV_NEGATIVE": 1 - this.default_param.CIN3.sensativity, "HPV_POSITIVE": this.default_param.CIN3.sensativity },
+                    }
+                }
+                return {
+                    CIN_LT_2: { "HPV_NEGATIVE": this.default_param.CIN2.followup_specificity, "HPV_POSITIVE": 1 - this.default_param.CIN2.followup_specificity },
+                    CIN2: { "HPV_NEGATIVE": 1 - this.default_param.CIN2.sensativity, "HPV_POSITIVE": this.default_param.CIN2.sensativity },
+                    CIN3: { "HPV_NEGATIVE": 1 - this.default_param.CIN3.sensativity, "HPV_POSITIVE": this.default_param.CIN3.sensativity },
+                }
+            }
+        }
+        console.log(scenarios)
+        function plotScenario(scenario){
+            function _make(c,parentElement){
+                console.log(c.test)
+                console.log(testMap.get(c.test))
+                console.log(testMap.keys())
+                if (['Primary_HPV'].includes(c.test)){
+                    let divElement = document.createElement("div")
+                    divElement.classList.add('test')
+                    let testNameDiv = document.createElement("div")
+                    testNameDiv.innerText=c.test;
+                    testNameDiv.classList.add("testname")
+                    divElement.insertAdjacentElement('beforeend',testNameDiv)
+                    parentElement.insertAdjacentElement("beforeend",divElement)
+                    let tableElement=document.createElement("table")
+
+                    console.log(t.default_param)
+                    Object.entries(t.default_param).forEach(([key,value])=> {
+                        let keyRow=tableElement.insertRow()
+                        keyRow.insertCell().innerText=key;
+                        keyRow.classList.add("keyrow")
+                        let nameRow=tableElement.insertRow()
+                        let valueRow=tableElement.insertRow()
+                        Object.entries(value).forEach( ([k2,v2])=>{
+                            nameRow.insertCell().innerText=k2;
+                            let valueCell=valueRow.insertCell()
+                            let valueInput = document.createElement("input")
+                            valueInput.type="number"
+                            valueInput.step="any"
+                            valueInput.defaultValue=v2
+                            valueInput.max=1
+                            valueInput.min=0
+                            valueCell.insertAdjacentElement("beforeend",valueInput)
+                        } )
+                        
+                    })
+                    divElement.insertAdjacentElement("beforeend",tableElement)
+                }
+            }
+            let parentElement = document.getElementById("out")
+            let d1 = document.createElement("div")
+            d1.innerText=scenario.scenarioName
+            d1.classList.add("scenario")
+            parentElement.insertAdjacentElement("beforeend",d1)
+            _make(scenario,parentElement)
+        }
+        plotScenario(scenarios.scenario2)
+    </script>
+</body>
+</html>

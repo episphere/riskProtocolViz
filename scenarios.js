@@ -108,6 +108,28 @@ export const testMap = new Map([
                 "CIN3": { "COLPO_NEGATIVE": 0.0, "COLPO_POSITIVE": 1.0 }
             }
         },
+    }],
+    ["S1_Past_NILM", {
+        "test": "S1_Past_NILM",
+        "outcomes": ["NILM_X2", "LOW_GRADE", "HIGH_GRADE"],
+        "probabilities": function (year) {
+            return {
+                "CIN_LT_2": {NILM_X2:0.539799050225538,LOW_GRADE:0.437338335573422,HIGH_GRADE:0.0228626142010395},
+                "CIN2": {NILM_X2:0.649459455770501,LOW_GRADE:0.32180516825407,HIGH_GRADE:0.0287353759754292},
+                "CIN3": {NILM_X2:0.690995485894883,LOW_GRADE:0.272619762043229,HIGH_GRADE:0.0363847520618882}
+            }
+        }
+    }],
+    ["S1_Past_ASC_US+",{
+        "test": "S1_Past_ASC_US+",
+        "outcomes":["LOW_GRADE","OTHER"],
+        "probabilities":function(year){
+            return {
+                "CIN_LT_2":{LOW_GRADE:0.618356426615888,OTHER:0.381643573384112},
+                "CIN2":{LOW_GRADE:0.521798908037213,OTHER:0.478201091962787},
+                "CIN3":{LOW_GRADE:0.47177338006069,OTHER:0.52822661993931}
+            }
+        }
     }]
 ])
 
@@ -148,12 +170,47 @@ const cytology = {
 }
 
 export const newScenarios = {
-    scenario1:{
-        scenarioName: "Primary HPV screening with Cytology",
+    scenario1_y0:{
+        scenarioName: "Primary HPV screening triaged with Cytology",
         test: "Primary_HPV",
         followup: {
             "HPV_NEGATIVE": hpv_neg_followup,
-            "HPV_POSITIVE": cytology,
+            "HPV_POSITIVE": cytology
+        }
+    },
+    scenario1:{
+        scenarioName: "Primary HPV screening triaged with Cytology",
+        test: "Primary_HPV",
+        followup: {
+            "HPV_NEGATIVE": hpv_neg_followup,
+            "HPV_POSITIVE": {
+                test:"Cytology",
+                followup:{
+                    NILM:{
+                        test: "S1_Past_NILM",
+                        followup:{
+                            NILM_X2:colpo,
+                            LOW_GRADE: one_year_followup,
+                            HIGH_GRADE: colpo,
+                        }
+                    },
+                    ASC_US:{
+                        test:"S1_Past_ASC_US+",
+                        followup:{
+                            "LOW_GRADE":one_year_followup,
+                            "OTHER":colpo
+                        }
+                    },
+                    LSIL:{
+                        test:"S1_Past_ASC_US+",
+                        followup:{
+                            "LOW_GRADE":one_year_followup,
+                            OTHER:colpo
+                        }
+                    },
+                    HIGH_GRADE: colpo
+                }
+            }
         }
     },
     scenario2:{

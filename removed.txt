@@ -1,0 +1,75 @@
+function getTotalCount(counts) {
+    return Object.values(counts).reduce((acc, v) => {
+        if (v < 0) throw new Error(`Sample with ${v}<0 counts`);
+        if (!Number.isFinite(v)) throw new Error(`Sample with Bad count: ${v}`);
+        return acc + v
+    })
+}
+
+export class Sample {
+    constructor(counts, total) {
+        this.counts = counts;
+        this.total = total
+    }
+
+    /**
+     * Creates a new Sample.  If any of the values are negative, it throws an exception.
+     * Note that all of the categories are mutally exclusive. (e.g You cannot be CIN2+ and CIN<2.)
+     * 
+     * @param {Object} counts - a pojo that contains all the catagories(keys) and counts(value)
+     * @return {Sample} a new sample Object 
+     */
+    static fromObject(counts) {
+        let total = getTotalCount(counts)
+        return new Sample(counts, total)
+    }
+
+    static fromLabelTotal(total, knownCounts, otherLabel) {
+        let knownTotal = getTotalCount(knownCounts);
+        let otherCount = total - knownTotal;
+        if (otherCount < 0) throw new Error(`Cannot create a sample with counts less than 0:\n total:${total} total of known counts:${knownTotal}\n${otherLabel}: ${otherCount}`);
+
+        knownCounts[otherLabel] = otherCount;
+        return new Sample(knownCounts, total)
+    }
+
+    get labels() {
+        return Object.keys(this.counts)
+    }
+
+    add(otherSample) {
+        if (!(otherSample instanceof Sample)) return this;
+
+        let cnts = this.labels.reduce((acc, key) => {
+            acc[key] = this.counts[key] + otherSample.counts[key];
+            return acc;
+        }, {})
+        return Sample.fromObject(cnts);
+    }
+
+    subtract(otherSample) {
+        if (!(otherSample instanceof Sample)) {
+            console.error("This: ", this);
+            console.error("Trying to subtract :", otherSample)
+            throw new Error(`Error subtracting from a sample`)
+        }
+
+        let cnts = this.labels.reduce((acc, key) => {
+            acc[key] = this.counts[key] - otherSample.counts[key];
+            return acc;
+        }, {})
+        return Sample.fromObject(cnts);
+    }
+
+    scale(factor){
+        let cnts = this.labels.reduce((acc, key) => {
+            acc[key] = factor * this.counts[key];
+            return acc;
+        }, {})
+        return Sample.fromObject(cnts);
+    }
+
+    static isSample(obj){
+        return obj instanceof Sample
+    }
+}
