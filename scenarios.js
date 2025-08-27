@@ -39,6 +39,51 @@ export const testMap = new Map([
             }
         },
     }],
+    ["Extended_HPV_genotyping",{
+        testName: "Extended_HPV_genotyping",
+        outcomes: ["HPV_NEGATIVE","HPV_56_59_66","HPV_OTHER","HPV16","HPV18"],
+        "probabilities": function (year,{
+            CIN2 = {sensativity: 0.977, specificity:0.928, followup_specificity:0.575},
+            CIN3 = {sensativity: 0.971} 
+        } = {}) {
+            if (year>0){
+                return {
+                    CIN_LT_2: {
+                        "HPV_NEGATIVE": CIN2.followup_specificity, "HPV_56_59_66": 0.1806620936325 * (1 - CIN2.followup_specificity),
+                        "HPV_OTHER": 0.6445308421957 * (1 - CIN2.followup_specificity), "HPV16": 0.1349356853562 * (1 - CIN2.followup_specificity),
+                        "HPV18": 0.0398713788156 * (1 - CIN2.followup_specificity)
+                    },
+                    CIN2: {
+                        "HPV_NEGATIVE": 1 - CIN2.sensativity, "HPV_56_59_66": 0.044192812 * CIN2.sensativity,
+                        "HPV_OTHER": 0.5407587698322 * CIN2.sensativity, "HPV16": 0.3443049813002 * CIN2.sensativity,
+                        "HPV18": 0.0707434371307 * CIN2.sensativity
+                    },
+                    CIN3: {
+                        "HPV_NEGATIVE": 1 - CIN3.sensativity, "HPV_56_59_66": 0.0231557970530 * CIN3.sensativity,
+                        "HPV_OTHER": 0.4118072214929 * CIN3.sensativity, "HPV16": 0.5020244012067 * CIN3.sensativity,
+                        "HPV18": 0.0630125802475 * CIN3.sensativity
+                    }
+                }
+            }
+            return {
+                CIN_LT_2: {
+                    "HPV_NEGATIVE": CIN2.specificity, "HPV_56_59_66":0.1806620936325*(1-CIN2.specificity),
+                    "HPV_OTHER":0.6445308421957*(1-CIN2.specificity), "HPV16":0.1349356853562*(1-CIN2.specificity),
+                    "HPV18":0.0398713788156*(1-CIN2.specificity)
+                },
+                CIN2:{
+                    "HPV_NEGATIVE": 1-CIN2.sensativity, "HPV_56_59_66":0.044192812*CIN2.sensativity,
+                    "HPV_OTHER":0.5407587698322*CIN2.sensativity, "HPV16":0.3443049813002*CIN2.sensativity,
+                    "HPV18":0.0707434371307*CIN2.sensativity
+                },
+                CIN3:{
+                    "HPV_NEGATIVE": 1-CIN3.sensativity, "HPV_56_59_66":0.0231557970530*CIN3.sensativity,
+                    "HPV_OTHER":0.4118072214929*CIN3.sensativity, "HPV16":0.5020244012067*CIN3.sensativity,
+                    "HPV18":0.0630125802475*CIN3.sensativity
+                }
+            }
+        }
+    }],
     ["HPV_COTEST", {
         "testName": "HPV_COTEST",
         "outcomes": [
@@ -95,6 +140,55 @@ export const testMap = new Map([
                 "CIN_LT_2": { "DS_POSITIVE": 0.414124069704990, "DS_NEGATIVE": 0.58587593029501 },
                 "CIN2": { "DS_POSITIVE": 0.823318170339884, "DS_NEGATIVE": 0.176681829660116 },
                 "CIN3": { "DS_POSITIVE": 0.898331496672872, "DS_NEGATIVE": 0.101668503327128 },
+            }
+        }
+    }],
+    ["Dual_Stain_HPV_56_59_66",{
+        "testName": "Dual_Stain_HPV_56_59_66",
+        "outcomes": ["DS_POSITIVE", "DS_NEGATIVE"],
+        "probabilities": function (year) {
+            // p={specificity,sensativity,sensativity...}
+            let p={CIN_LT_2:0.6890619426856,CIN2:0.7559744499724,CIN3:0.8836111920322}
+            return {
+                "CIN_LT_2": { "DS_POSITIVE": 1-p.CIN_LT_2, "DS_NEGATIVE": p.CIN_LT_2 },
+                "CIN2": { "DS_POSITIVE":p.CIN2, "DS_NEGATIVE": 1-p.CIN2 },
+                "CIN3": { "DS_POSITIVE": p.CIN3, "DS_NEGATIVE": 1-p.CIN3 },
+            }
+        }
+    }],
+    ["Dual_Stain_HPV_OTHER",{
+        "testName": "Dual_Stain_HPV_OTHER",
+        "outcomes": ["DS_POSITIVE", "DS_NEGATIVE"],
+        "probabilities": function (year) {
+            let p={CIN_LT_2:0.5431535125775,CIN2:0.8523845916894,CIN3:0.9389332324373}
+            return {
+                "CIN_LT_2": { "DS_POSITIVE": 1-p.CIN_LT_2, "DS_NEGATIVE": p.CIN_LT_2 },
+                "CIN2": { "DS_POSITIVE":p.CIN2, "DS_NEGATIVE": 1-p.CIN2 },
+                "CIN3": { "DS_POSITIVE": p.CIN3, "DS_NEGATIVE": 1-p.CIN3 },
+            }
+        }
+    }],
+    ["Dual_Stain_HPV16",{
+        "testName": "Dual_Stain_HPV16",
+        "outcomes": ["DS_POSITIVE", "DS_NEGATIVE"],
+        "probabilities": function (year) {
+            let p={CIN_LT_2:0.4221706285164,CIN2:0.9038141200100,CIN3:0.9637008861184}
+            return {
+                "CIN_LT_2": { "DS_POSITIVE": 1-p.CIN_LT_2, "DS_NEGATIVE": p.CIN_LT_2 },
+                "CIN2": { "DS_POSITIVE":p.CIN2, "DS_NEGATIVE": 1-p.CIN2 },
+                "CIN3": { "DS_POSITIVE": p.CIN3, "DS_NEGATIVE": 1-p.CIN3 },
+            }
+        }
+    }],
+    ["Dual_Stain_HPV18",{
+        "testName": "Dual_Stain_HPV18",
+        "outcomes": ["DS_POSITIVE", "DS_NEGATIVE"],
+        "probabilities": function (year) {
+            let p={CIN_LT_2:0.4363003418997,CIN2:0.8986817869870,CIN3:0.9626163343471}
+            return {
+                "CIN_LT_2": { "DS_POSITIVE": 1-p.CIN_LT_2, "DS_NEGATIVE": p.CIN_LT_2 },
+                "CIN2": { "DS_POSITIVE":p.CIN2, "DS_NEGATIVE": 1-p.CIN2 },
+                "CIN3": { "DS_POSITIVE": p.CIN3, "DS_NEGATIVE": 1-p.CIN3 },
             }
         }
     }],
@@ -253,20 +347,32 @@ export const newScenarios = {
             "HPV_NEGATIVE": hpv_neg_followup
         }
     },
-    scenario7:{
-        scenarioName: "Screening with cotesting",
-        test: "HPVCotest",
+    scenario5:{
+        scenarioName: "Primary HPV screening with extended genotyping triaged with Cytology",
+        test: "Extended_HPV_genotyping",
         followup: {
-            "HPV_POSITIVE_NILM":{
-
+            "HPV_56_59_66": one_year_followup,
+            "HPV_OTHER": cytology,
+            "HPV16": colpo,
+            "HPV18": colpo,
+            "HPV_NEGATIVE": hpv_neg_followup
+        }
+    },
+    scenario6:{
+        scenarioName: "Primary HPV screening with extended genotyping triaged with Dual Stain",
+        test: "Extended_HPV_genotyping",
+        followup: {
+            "HPV_56_59_66": one_year_followup,
+            "HPV_OTHER":  {
+                test: "Dual_Stain_HPV_OTHER",
+                followup: {
+                    "DS_POSITIVE": colpo,
+                    "DS_NEGATIVE": one_year_followup
+                }
             },
-            "HPV_POSITIVE_AS_US":{},
-            "HPV_POSITIVE_LSIL":{},
-            "HPV_POSITIVE_HIGH_GRADE":{},
-            "HPV_NEGATIVE_NILM":{},
-            "HPV_NEGATIVE_AS_US":{},
-            "HPV_NEGATIVE_LSIL":{},
-            "HPV_NEGATIVE_HIGH_GRADE":{}
+            "HPV16": colpo,
+            "HPV18": colpo,
+            "HPV_NEGATIVE": hpv_neg_followup
         }
     }
 }

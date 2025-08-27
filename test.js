@@ -80,7 +80,6 @@ export class Test{
                 acc1[label]=sample.counts[label]*probs[label][outcome]
                 return acc1
             },{})
-
             acc[outcome] = sample.newSampleFromTestResults(cntObj)
             return acc
         },{})

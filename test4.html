@@ -19,36 +19,46 @@
     <div class="container">
         <ul class="nav nav-tabs" id="scenario" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="scenario-1" data-bs-toggle="tab" data-bs-target="#scenario-1-pane"
+                <button class="nav-link active" id="scenario-1" data-bs-toggle="tab" data-bs-target="#scenario-1-pane"
                     role="tab" aria-controls="scenario-1-pane" aria-selected="true">Scenario 1</button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="scenario-2" data-bs-toggle="tab" data-bs-target="#scenario-2-pane"
-                    role="tab" aria-controls="scenario-2-pane" aria-selected="true">Scenario 2</button>
+                    role="tab" aria-controls="scenario-2-pane" aria-selected="false">Scenario 2</button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="scenario-3" data-bs-toggle="tab" data-bs-target="#scenario-3-pane"
-                    role="tab" aria-controls="scenario-3-pane" aria-selected="true">Scenario 3</button>
+                    role="tab" aria-controls="scenario-3-pane" aria-selected="false">Scenario 3</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="scenario-4" data-bs-toggle="tab" data-bs-target="#scenario-4-pane"
+                <button class="nav-link" id="scenario-4" data-bs-toggle="tab" data-bs-target="#scenario-4-pane"
                     role="tab" aria-controls="scenario-4-pane" aria-selected="false">Scenario 4</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="scenario-5" data-bs-toggle="tab" data-bs-target="#scenario-5-pane"
+                    role="tab" aria-controls="scenario-5-pane" aria-selected="false">Scenario 5</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="scenario-6" data-bs-toggle="tab" data-bs-target="#scenario-6-pane"
+                    role="tab" aria-controls="scenario-6-pane" aria-selected="false">Scenario 6</button>
             </li>
         </ul>
         <div class="tab-content" id="myTabContent">
-            <div class="tab-pane fade " id="scenario-1-pane" role="tabpanel" aria-labelledby="scenario-1" tabindex="0">
+            <div class="tab-pane fade show active" id="scenario-1-pane" role="tabpanel" aria-labelledby="scenario-1" tabindex="0">
                 <div class="accordion" id="scenario-1-accordion"></div>
             </div>
-            <div class="tab-pane fade " id="scenario-2-pane" role="tabpanel" aria-labelledby="scenario-2" tabindex="0"></div>
-            <div class="tab-pane fade " id="scenario-3-pane" role="tabpanel" aria-labelledby="scenario-3" tabindex="0"></div>
-            <div class="tab-pane fade show active" id="scenario-4-pane" role="tabpanel" aria-labelledby="scenario-4" tabindex="0"></div>
+            <div class="tab-pane fade" id="scenario-2-pane" role="tabpanel" aria-labelledby="scenario-2" tabindex="0"></div>
+            <div class="tab-pane fade" id="scenario-3-pane" role="tabpanel" aria-labelledby="scenario-3" tabindex="0"></div>
+            <div class="tab-pane fade" id="scenario-4-pane" role="tabpanel" aria-labelledby="scenario-4" tabindex="0"></div>
+            <div class="tab-pane fade" id="scenario-5-pane" role="tabpanel" aria-labelledby="scenario-5" tabindex="0"></div>
+            <div class="tab-pane fade" id="scenario-6-pane" role="tabpanel" aria-labelledby="scenario-6" tabindex="0"></div>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q"
         crossorigin="anonymous"></script>
     <script>
-        document.getElementById("scenario-4a").click()
+        document.getElementById("scenario-6").click()
     </script>
     <script type="module" src="./test4.js"></script>
 </body>

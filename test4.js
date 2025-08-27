@@ -16,6 +16,10 @@ function run_scenario(scenario, testMap, sample, year, iter = 0) {
         console.log(scenario.test)
         console.table(test.config.probabilities(year))
         let test_result = test.run(sample,year);
+        if (scenario.scenarioName == "Primary HPV screening with extended genotyping triaged with Dual Stain"){
+            console.log("================== ")
+            console.log(test_result)
+        }
         result = {
             outcomes:test.outcomes,
             results: test_result,
@@ -74,7 +78,11 @@ function update_actions(results, action_accumulator) {
 function getNextYearSample(expected_counts,year,actions,yearly_results){
 
     // get the year 0 true negatives and true positives...
-    let y0_TN = yearly_results[0].results['HPV_NEGATIVE'].counts.CIN_LT_2;
+    let y0_TN = {
+        CIN2: yearly_results[0].results['HPV_NEGATIVE'].counts.CIN_LT_2,
+        // we don't usually use CIN_LT_3 so it is not in counts..
+        CIN3: yearly_results[0].results['HPV_NEGATIVE'].samples[1].counts.CIN_LT_3
+    };
     let y0_FN = {
         CIN2:yearly_results[0].results['HPV_NEGATIVE'].counts.CIN2,
         CIN3:yearly_results[0].results['HPV_NEGATIVE'].counts.CIN3,
@@ -98,7 +106,7 @@ function getNextYearSample(expected_counts,year,actions,yearly_results){
             // less the False Negatives..
             y0_FN[group] -
             // less the new cases who have a long followup
-            y0_TN*expected_counts[group].incident_risk[year]
+            y0_TN[group]*expected_counts[group].incident_risk[year]
     })
     .map((cnt,indx)=>Sample.fromLabelTotal(total,{[groups[indx]]:cnt},otherLabels[indx]) )
     return Multisample.build_from_samples(cnts,["CIN_LT_2","CIN2","CIN3"])
@@ -404,5 +412,9 @@ const scenario2Element = document.getElementById("scenario-2-pane");
 run_three_years(newScenarios.scenario2, scenario2Element);
 const scenario3Element = document.getElementById("scenario-3-pane");
 run_three_years(newScenarios.scenario3, scenario3Element);
+const scenario5Element = document.getElementById("scenario-5-pane");
+run_three_years(newScenarios.scenario5, scenario5Element);
+const scenario6Element = document.getElementById("scenario-6-pane");
+run_three_years(newScenarios.scenario6, scenario6Element);
 
 run_scenario1()
