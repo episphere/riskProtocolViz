@@ -1,4 +1,4 @@
-import { newScenarios, defaultTestMap, counts,isTest } from './scenarios.js'
+import { newScenarios, defaultTestMap, defaultTestParameters, counts,isTest, adjustableTests } from './scenarios.js'
 import {Sample, Multisample} from './sample.js'
 import { Test } from './test.js';
 
@@ -141,7 +141,6 @@ HTMLTableRowElement.prototype.insertHead = function (index = -1) {
 }
 
 function addScenarioName(parentElement,scenarioName){
-    parentElement.innerText="";
     let scenarioNameElement=buildTableTitleElement(scenarioName);        
     scenarioNameElement.classList.add("text-center")
     parentElement.insertAdjacentElement("beforeend",scenarioNameElement);
@@ -345,7 +344,8 @@ function insertAccordion(accordionElement,year,{headerText="Year"}={}){
 
 
 
-function run_three_years(scenario, parentElement) {
+function run_three_years(scenario_key, parentElement) {
+    let scenario = newScenarios[scenario_key];
     let actions = {
         treat: [],
         followup: []
@@ -364,6 +364,7 @@ function run_three_years(scenario, parentElement) {
         return scenario_results;
     }
     
+    buildParameterSetting(parentElement,scenario_key);
     addScenarioName(parentElement,scenario.scenarioName)
     let initial_sample = Multisample.build(
         { CIN2: counts.CIN2.expected[0], CIN_LT_2: counts.initial_enrollment - counts.CIN2.expected[0] },
@@ -384,7 +385,6 @@ function run_three_years(scenario, parentElement) {
 
 function run_scenario1(){  
     const scenario1Element = document.getElementById("scenario-1-pane");
-    buildParameterSetting(scenario1Element,1);
     let actions = {
         treat: [],
         followup: []
@@ -399,6 +399,8 @@ function run_scenario1(){
     )]
     let results=[]
     let scenario = newScenarios.scenario1_y0;
+    buildParameterSetting(scenario1Element,"scenario1");
+    addScenarioName(scenario1Element,scenario.scenarioName)
     buildSampleTable(scenario1Element,"Scenario 1 initial sample",sample[0],true,scenario.scenarioName)
     results.push(run_scenario(scenario, defaultTestMap, sample[0],0) );
     actions = update_actions(results[0],actions)
@@ -419,50 +421,366 @@ function run_scenario1(){
     }
 }
 
-const scenario4Element = document.getElementById("scenario-4-pane");
-run_three_years(newScenarios.scenario4, scenario4Element);
-const scenario2Element = document.getElementById("scenario-2-pane");
-run_three_years(newScenarios.scenario2, scenario2Element);
-const scenario3Element = document.getElementById("scenario-3-pane");
-run_three_years(newScenarios.scenario3, scenario3Element);
-const scenario5Element = document.getElementById("scenario-5-pane");
-run_three_years(newScenarios.scenario5, scenario5Element);
-const scenario6Element = document.getElementById("scenario-6-pane");
-run_three_years(newScenarios.scenario6, scenario6Element);
+function runAllScenarios(){
+    const scenario4Element = document.getElementById("scenario-4-pane");
+    run_three_years("scenario4", scenario4Element);
+    const scenario2Element = document.getElementById("scenario-2-pane");
+    run_three_years("scenario2", scenario2Element);
+    const scenario3Element = document.getElementById("scenario-3-pane");
+    run_three_years("scenario3", scenario3Element);
+    const scenario5Element = document.getElementById("scenario-5-pane");
+    run_three_years("scenario5", scenario5Element);
+    const scenario6Element = document.getElementById("scenario-6-pane");
+    run_three_years("scenario6", scenario6Element);
+    run_scenario1()
+}
 
-run_scenario1()
+
+buildCommandLine();
+runAllScenarios();
 
 
-function buildParameterSetting(parentElement,scenario_number){
-    // outer card
-    let card = document.createElement("div");
-    card.classList.add("card", "mb-2");
+function buildCommandLine(){
+    const container = document.getElementById("command-bar");
+    container.innerHTML="";
 
-    // card header — acts as the toggle button
-    let header = document.createElement("div");
-    header.classList.add("card-header");
-    header.style.cursor = "pointer";
-    header.style.userSelect = "none";
-    header.innerText = "Group One";
-    header.dataset.bsToggle = "collapse";
-    header.dataset.bsTarget = `#collapse_${scenario_number}`;
-    header.setAttribute("aria-expanded", "true");
-    header.setAttribute("aria-controls", `collapse_${scenario_number}`);
+    container.className = 'd-flex justify-content-between align-items-center bg-white border-bottom py-2 px-3 sticky-top';
+    container.style.zIndex = "1050"; 
+    container.style.top = "0";
 
-    // collapsible wrapper
-    let collapseDiv = document.createElement("div");
-    collapseDiv.id = `collapse_${scenario_number}`;
-    collapseDiv.classList.add("collapse", "show");
+    const title = document.createElement('h5');
+    title.className = 'mb-0 fw-bold text-dark';
+    title.style.fontSize = '0.9rem';
+    title.textContent = 'Risk Visualization';
+    const actionGroup = document.createElement('div');
+    actionGroup.className = 'd-flex gap-2';
+    const resetAllBtn = document.createElement('button');
+    resetAllBtn.className = 'btn btn-outline-secondary btn-sm border-0';
+    resetAllBtn.style.fontSize = '0.7rem';
+    resetAllBtn.textContent = 'Reset All Overrides';
+    resetAllBtn.onclick = () => {
+        if(confirm("Clear all custom parameters?")) {
+            userParams.clear();
+            location.reload(); // Hard reset to refresh UI states
+        }
+    };
 
-    // card body inside the collapse
-    let body = document.createElement("div");
-    body.classList.add("card-body");
-    body.innerText = "Your parameters go here.";
+    const rerunBtn = document.createElement('button');
+    rerunBtn.className = 'btn btn-primary btn-sm fw-bold px-4 shadow-sm';
+    rerunBtn.style.fontSize = '0.75rem';
+    rerunBtn.innerHTML = '&#9654; RUN SIMULATION';
+    rerunBtn.onclick = (e) => runAllScenarios(e);
 
-    // assemble
-    collapseDiv.insertAdjacentElement("beforeend", body);
-    card.insertAdjacentElement("beforeend", header);
-    card.insertAdjacentElement("beforeend", collapseDiv);
-    parentElement.insertAdjacentElement("beforeend", card);
+    actionGroup.appendChild(resetAllBtn);
+    actionGroup.appendChild(rerunBtn);
+    
+    container.appendChild(title);
+    container.appendChild(actionGroup);
 
+    return container;
+}
+
+function buildParameterSetting(parentElement, scenario_key) {
+    parentElement.innerHTML = '';
+    const config = adjustableTests[scenario_key];
+    if (!config) return;
+
+    const settingsAccordion = document.createElement('div');
+    settingsAccordion.className = 'accordion mb-4';
+    settingsAccordion.id = `settings-wrapper-${scenario_key}`;
+    const collapseId = `collapse-settings-${scenario_key}`;
+
+    // 1. Build the Accordion Frame
+    settingsAccordion.innerHTML = `
+        <div class="accordion-item border-0 shadow-sm">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed text-dark fw-bold py-2" 
+                        type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
+                    <i class="bi bi-sliders me-2"></i> Settings
+                </button>
+            </h2>
+            <div id="${collapseId}" class="accordion-collapse collapse">
+                <div class="accordion-body bg-light p-3">
+                    <ul class="nav nav-tabs border-bottom-0 mb-3" id="tablist-${scenario_key}" role="tablist" style="font-size: 0.75rem;">
+                    </ul>
+                    <div class="tab-content" id="content-${scenario_key}">
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    parentElement.appendChild(settingsAccordion);
+
+    // 2. Grab references to the new containers
+    const tabList = settingsAccordion.querySelector(`#tablist-${scenario_key}`);
+    const tabContent = settingsAccordion.querySelector(`#content-${scenario_key}`);
+
+    // 3. Loop through and build Nav + Panes
+    config.forEach((test_key, index) => {
+        const isActive = index === 0;
+        const safeId = `pane-${scenario_key}-${test_key.replace(/\s+/g, '-')}`;
+
+        // Create the Tab Link (Underline Style)
+        const navItem = document.createElement('li');
+        navItem.className = 'nav-item';
+        navItem.innerHTML = `
+            <button class="settings-tab nav-link border-0 border-bottom border-3" 
+                data-bs-toggle="tab" data-bs-target="#${safeId}" type="button" role="tab">
+                ${test_key.replace(/_/g, ' ')}
+            </button>
+        `;
+        tabList.appendChild(navItem);
+
+        // Create the Pane
+        const pane = document.createElement('div');
+        pane.className = `tab-pane fade ${isActive ? 'show active' : ''}`;
+        pane.id = safeId;
+
+        // 4. IMPORTANT: Build the Test UI and append it to the LIVE pane
+        const testUI = buildTestUI(scenario_key, test_key);
+        pane.appendChild(testUI);
+        tabContent.appendChild(pane);
+    });
+}
+
+function buildTestUI(scenario_key, test_key) {
+    const testContainer = document.createElement('div');
+    // REMOVED 'card' from classList if you want a flatter look, 
+    // but kept it here as requested to maintain the "card look"
+    testContainer.classList.add('card', 'border-0', 'shadow-sm', 'p-3', 'rounded-3', 'bg-white');
+
+    const headerWrapper = document.createElement('div');
+    // Hide the header text if the tab name already covers it, or keep for clarity
+    headerWrapper.className = 'd-flex justify-content-between align-items-center border-bottom pb-2 mb-2';
+
+    const header = document.createElement('h6');
+    header.className = 'fw-bold text-primary mb-0';
+    header.style.fontSize = '0.85rem';
+    header.textContent = `${test_key.replace(/_/g, ' ')} Parameters`;
+    
+    // ... (rest of resetBtn logic remains the same)
+    const resetBtn = document.createElement('button');
+    resetBtn.className = 'btn btn-link btn-sm text-muted p-0 text-decoration-none';
+    resetBtn.style.fontSize = '0.65rem';
+    resetBtn.innerHTML = '&#8634; Reset to Defaults';
+    resetBtn.onclick = () => resetTestInputs(testContainer);
+
+    headerWrapper.appendChild(header);
+    headerWrapper.appendChild(resetBtn);
+    testContainer.appendChild(headerWrapper);
+
+    const paramsMap = defaultTestParameters.get(test_key);
+    const activeParamsMap = userParams.get(test_key) ?? defaultTestParameters.get(test_key);
+    if (paramsMap) {
+        for (const [category, activeParams] of Object.entries(activeParamsMap)) {
+            let defaultParams = paramsMap[category];
+            const catRow = document.createElement('div');
+            catRow.classList.add('mt-3');
+
+            // Category Label (CIN2, CIN3)
+            const catLabel = document.createElement('div');            
+            catLabel.className = 'small fw-bold text-muted text-uppercase mb-1';
+            catLabel.style.fontSize = '0.65rem';
+            catLabel.textContent = category;
+            catRow.appendChild(catLabel);
+
+            const inputFlexWrapper = document.createElement('div');
+            inputFlexWrapper.classList.add('d-flex', 'flex-row', 'flex-wrap', 'gap-2')
+
+             for (const [paramName, value] of Object.entries(activeParams)) {
+                const defaultValue = defaultParams[paramName];
+                // Create the compact input group
+                const inputGroup = createCompactInput(test_key, category, paramName, value, defaultValue);
+                inputFlexWrapper.appendChild(inputGroup);
+            }
+
+            catRow.appendChild(inputFlexWrapper);
+            testContainer.appendChild(catRow);
+        }
+    }
+    return testContainer;
+}
+
+/*
+function buildParameterSetting(parentElement,scenario_key){
+    parentElement.innerHTML = '';
+    const config = adjustableTests[scenario_key];
+    if (!config) return;
+
+    const settingsAccordion = document.createElement('div');
+    settingsAccordion.classList.add('accordion', 'mb-4');
+    settingsAccordion.id = `settings-wrapper-${scenario_key}`;
+    const collapseId = `collapse-settings-${scenario_key}`
+
+    settingsAccordion.innerHTML = `
+        <div class="accordion-item border-primary shadow-sm">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed bg-primary-subtle fw-bold py-2" 
+                        type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
+                    <i class="bi bi-sliders me-2"></i> Settings
+                </button>
+            </h2>
+            <div id="${collapseId}" class="accordion-collapse collapse">
+                <div class="accordion-body bg-light p-3">
+                    <div id="test-list-${scenario_key}" class="d-flex flex-column gap-3">
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    parentElement.appendChild(settingsAccordion);
+
+    const listContainer = settingsAccordion.querySelector(`#test-list-${scenario_key}`);
+
+    const flexRow = document.createElement('div');
+    flexRow.classList.add('d-flex', 'flex-row', 'flex-wrap', 'gap-3', 'justify-content-start');
+    listContainer.appendChild(flexRow);
+
+    config.forEach(test_key => {
+        const testUI = buildTestUI(scenario_key, test_key);
+        flexRow.appendChild(testUI);
+    });
+}
+
+function buildTestUI(scenario_key, test_key) {
+    const testContainer = document.createElement('div');
+    testContainer.classList.add('card','border','p-2','rounded-2');
+
+    const headerWrapper = document.createElement('div');
+    headerWrapper.className = 'd-flex justify-content-between align-items-center border-bottom';
+
+    const header = document.createElement('h6');
+    header.className = 'fw-bold text-secondary';
+    header.textContent = test_key.replace('_', ' ');
+    
+    const resetBtn = document.createElement('button');
+    resetBtn.className = 'btn btn-link btn-sm text-muted p-0 text-decoration-none';
+    resetBtn.style.fontSize = '0.65rem';
+    resetBtn.innerHTML = '&#8634; Reset'; // Unicode for counter-clockwise arrow
+    resetBtn.onclick = () => resetTestInputs(testContainer);
+
+    headerWrapper.appendChild(header);
+    headerWrapper.appendChild(resetBtn)
+    testContainer.appendChild(headerWrapper);
+
+    const paramsMap = defaultTestParameters.get(test_key);
+    const activeParamsMap = userParams.get(test_key) ?? defaultTestParameters.get(test_key);
+    
+
+    if (paramsMap) {
+        for (const [category, activeParams] of Object.entries(activeParamsMap)) {
+            let defaultParams = paramsMap[category];
+            const catRow = document.createElement('div');
+            catRow.classList.add('mt-3');
+
+            // Category Label (CIN2, CIN3)
+            const catLabel = document.createElement('div');            
+            catLabel.className = 'small fw-bold text-muted text-uppercase mb-1';
+            catLabel.style.fontSize = '0.65rem';
+            catLabel.textContent = category;
+            catRow.appendChild(catLabel);
+
+            const inputFlexWrapper = document.createElement('div');
+            inputFlexWrapper.classList.add('d-flex', 'flex-row', 'flex-wrap', 'gap-2')
+
+             for (const [paramName, value] of Object.entries(activeParams)) {
+                const defaultValue = defaultParams[paramName];
+                // Create the compact input group
+                const inputGroup = createCompactInput(test_key, category, paramName, value, defaultValue);
+                inputFlexWrapper.appendChild(inputGroup);
+            }
+
+            catRow.appendChild(inputFlexWrapper);
+            testContainer.appendChild(catRow);
+        }
+    }
+    return testContainer;
+}
+*/
+function createCompactInput(test, cat, param, val,def) {
+    const wrapper = document.createElement('div');
+    // Flex-basis allows them to sit side-by-side
+    wrapper.classList.add('d-flex', 'flex-column');
+    wrapper.style.flex = "1 1 120px"; 
+    wrapper.style.maxWidth = "200px";
+
+    const isFollowup = param === 'followup_specificity';
+    const tooltipAttr = isFollowup 
+        ? 'data-bs-toggle="tooltip" data-bs-placement="top" title="Specificity for patients in the surveillance/follow-up pathway."' 
+        : '';
+    const tooltipIcon = isFollowup?'<span class="ms-1 text-primary fw-bold" style="font-size: 0.6rem;">&#9432;</span>':''
+
+    wrapper.innerHTML = `
+        <label class="text-muted mb-0 align-items-center" 
+            style="font-size: 0.6rem; letter-spacing: 0.02rem;" ${tooltipAttr}>
+        ${param.replace('_', ' ')} ${tooltipIcon}
+        </label>
+        <input type="number"
+               step="any"
+               min="0"
+               max="1" 
+               class="form-control form-control-sm font-monospace border-0 border-bottom bg-light px-1" 
+               value="${val}" 
+               data-test="${test}" 
+               data-cat="${cat}" 
+               data-param="${param}"
+               data-default="${def}"
+               spellcheck="false"
+               style="font-size: 0.8rem; border-radius: 0; height: 24px;"
+               >
+    `;
+    const input = wrapper.querySelector('input');
+    input.addEventListener('change',function(){
+        let value = parseFloat(this.value);
+        const defaultVal = parseFloat(this.getAttribute('data-default'));
+        if (value > 1) this.value = 1;
+        if (value < 0) this.value = 0;
+
+        const testVals = userParams.getOrInsertComputed(test, () => {
+            // This creates a NEW memory reference. 
+            // Defaults are now safe from accidental mutation.
+            return structuredClone(defaultTestParameters.get(test));
+        });
+        testVals[cat][param] = parseFloat(this.value);
+    });
+
+    return wrapper;
+}
+
+function validateProbability(x){
+    console.log("validatating ",x)
+}
+function resetTestInputs(container) {
+    const inputs = container.querySelectorAll('input[data-default]');
+    inputs.forEach(input => {
+        const defaultValue = input.getAttribute('data-default');
+        input.value = defaultValue;
+        
+        // Optional: Flash the input green to show it was reset
+        input.style.transition = 'background-color 0.5s';
+        input.style.backgroundColor = '#d1e7dd'; // Bootstrap success-subtle
+        setTimeout(() => {
+            input.style.backgroundColor = '';
+        }, 500);
+    });
+    
+    // If you are using a Map to track changes, you'll want to clear the entry 
+    // for this test so the simulation pulls from defaults again.
+    const firstInput = inputs[0];
+    if (firstInput) {
+        const testKey = firstInput.dataset.test;
+        userParams.delete(testKey);
+    }
+}
+
+// Just to be safe...
+if (!Map.prototype.getOrInsertComputed) {
+    Map.prototype.getOrInsertComputed = function(key, callback) {
+        if (this.has(key)) return this.get(key);
+        const value = callback(key);
+        this.set(key, value);
+        return value;
+    };
 }

@@ -1,11 +1,31 @@
+export const defaultTestParameters= new Map([
+    ["Primary_HPV",{
+        CIN2:{sensitivity: 0.9766945700, specificity:0.9283468213, followup_specificity:0.575},
+        CIN3:{sensitivity: 0.9709464567} 
+    }],
+    ["Cytology",{
+        CIN2:{sensitivity: 0.834, specificity:0.458},
+        CIN3:{sensitivity: 0.828}
+    }],
+    ["Colposcopy",{
+        CIN2:{sensitivity:1.0, specificity:1.0},
+        CIN3:{sensitivity:1.0}
+    }],
+    ["HPV_Partial_genotyping",{
+        CIN2:{sensitivity: 0.977, specificity:0.928, followup_specificity:0.575},
+        CIN3:{sensitivity: 0.971} 
+    }]
+]);
+
 export const defaultTestMap = new Map([
     ["Primary_HPV",{
         "testName": "Primary_HPV",
         "outcomes":["HPV_NEGATIVE","HPV_POSITIVE"],
-        "probabilities": function (year,{
-            CIN2 = {sensitivity: 0.9766945700, specificity:0.9283468213, followup_specificity:0.575},
-            CIN3 = {sensitivity: 0.9709464567} 
-        } = {}) {
+        "probabilities": function (year,params) {
+            const defaults = defaultTestParameters.get("Primary_HPV");
+            const CIN2 = (params && params.CIN2) ? params.CIN2 : defaults.CIN2;
+            const CIN3 = (params && params.CIN3) ? params.CIN3 : defaults.CIN3;
+
             if (year == 0){
                 return {
                     CIN_LT_2: {"HPV_NEGATIVE":CIN2.specificity,"HPV_POSITIVE":1-CIN2.specificity},
@@ -20,15 +40,48 @@ export const defaultTestMap = new Map([
             }     
         }
     }],
+    ["Cytology",{
+        "testName":"Cytology",
+        "outcomes":["NILM","ASC_US","LSIL","HIGH_GRADE"],
+        "probabilities": function (year,params) {
+            const defaults = defaultTestParameters.get("Cytology");
+            const CIN2 = (params && params.CIN2) ? params.CIN2 : defaults.CIN2;
+            const CIN3 = (params && params.CIN3) ? params.CIN3 : defaults.CIN3;
+            return {
+                CIN_LT_2: {"NILM":CIN2.specificity,"ASC_US":(1-CIN2.specificity)*0.527184104,"LSIL":(1-CIN2.specificity)*0.411915221,"HIGH_GRADE":(1-CIN2.specificity)*0.060900675},
+                CIN2: {"NILM":1-CIN2.sensitivity,"ASC_US":CIN2.sensitivity*0.312140683124584,"LSIL":CIN2.sensitivity*0.279958604848683,"HIGH_GRADE":CIN2.sensitivity*0.407900712026733},
+                CIN3: {"NILM":1-CIN3.sensitivity,"ASC_US":CIN3.sensitivity*0.261744875432922,"LSIL":CIN3.sensitivity*0.151306847836982,"HIGH_GRADE":CIN3.sensitivity*0.586948276730096}
+            }
+        }
+    }],
+    ["Colposcopy", {
+        "testName": "Colposcopy",
+        "outcomes": ["COLPO_POSITIVE", "COLPO_NEGATIVE"],
+        "probabilities": function (year,params) {
+            const defaults = defaultTestParameters.get("Colposcopy");
+            const CIN2 = (params && params.CIN2) ? params.CIN2 : defaults.CIN2;
+            const CIN3 = (params && params.CIN3) ? params.CIN3 : defaults.CIN3;
+            return {
+                "CIN_LT_2": { "COLPO_NEGATIVE": CIN2.specificity, "COLPO_POSITIVE": 1-(CIN2.specificity) },
+                "CIN2": { "COLPO_NEGATIVE": 1-CIN2.sensitivity, "COLPO_POSITIVE": CIN2.sensitivity },
+                "CIN3": { "COLPO_NEGATIVE": 1-CIN3.sensitivity, "COLPO_POSITIVE": CIN3.sensitivity}
+            }
+        },
+    }],
     ["HPV_Partial_genotyping", {
         "testName": "HPV_Partial_genotyping",
         "outcomes": ["HR12", "HPV16", "HPV18", "HPV_NEGATIVE"],
-        "probabilities": function (year) {
+        "probabilities": function (year,params) {
+            const defaults = defaultTestParameters.get("HPV_Partial_genotyping");
+            const CIN2 = (params && params.CIN2) ? params.CIN2 : defaults.CIN2;
+            const CIN3 = (params && params.CIN3) ? params.CIN3 : defaults.CIN3;
+
+            /// DER... working here
             if (year == 0) {
                 return {
-                    "CIN_LT_2": { "HR12": 0.0604201525976848, "HPV16": 0.0082828141720536, "HPV18": 0.0032970332302616, "HPV_NEGATIVE": 0.928 },
-                    "CIN2": { "HR12": 0.56944802837317, "HPV16": 0.338358458450934, "HPV18": 0.0691935131758958, "HPV_NEGATIVE": 0.023 },
-                    "CIN3": { "HR12": 0.438982641950655, "HPV16": 0.464364750925894, "HPV18": 0.067652607, "HPV_NEGATIVE": 0.029 },
+                    "CIN_LT_2": { "HR12": 0.8391687860790*(1-CIN2.specificity), "HPV16": 0.1150390857230*(1-CIN2.specificity), "HPV18": 0.0457921281981*(1-CIN2.specificity), "HPV_NEGATIVE": CIN2.specificity },
+                    "CIN2": { "HR12": 0.56944802837317, "HPV16": 0.338358458450934, "HPV18": 0.0691935131758958, "HPV_NEGATIVE": 1-CIN2.sensitivity },
+                    "CIN3": { "HR12": 0.438982641950655, "HPV16": 0.464364750925894, "HPV18": 0.067652607, "HPV_NEGATIVE": 1-CIN3.sensitivity },
                 }
             }
 
@@ -107,20 +160,6 @@ export const defaultTestMap = new Map([
         }
 
     }],
-    ["Cytology",{
-        "testName":"Cytology",
-        "outcomes":["NILM","ASC_US","LSIL","HIGH_GRADE"],
-        "probabilities": function (year,{
-            CIN2= {sensitivity: 0.834, specificity:0.458},
-            CIN3= {sensitivity: 0.828},
-        } = {}) {
-            return {
-                CIN_LT_2: {"NILM":CIN2.specificity,"ASC_US":(1-CIN2.specificity)*0.527184104,"LSIL":(1-CIN2.specificity)*0.411915221,"HIGH_GRADE":(1-CIN2.specificity)*0.060900675},
-                CIN2: {"NILM":1-CIN2.sensitivity,"ASC_US":CIN2.sensitivity*0.312140683124584,"LSIL":CIN2.sensitivity*0.279958604848683,"HIGH_GRADE":CIN2.sensitivity*0.407900712026733},
-                CIN3: {"NILM":1-CIN3.sensitivity,"ASC_US":CIN3.sensitivity*0.261744875432922,"LSIL":CIN3.sensitivity*0.151306847836982,"HIGH_GRADE":CIN3.sensitivity*0.586948276730096}
-            }
-        }
-    }],
     ["Dual_Stain_HPV+",{
         "testName": "Dual_Stain_HPV+",
         "outcomes": ["DS_POSITIVE", "DS_NEGATIVE"],
@@ -192,17 +231,6 @@ export const defaultTestMap = new Map([
             }
         }
     }],
-    ["Colposcopy", {
-        "testName": "Colposcopy",
-        "outcomes": ["COLPO_POSITIVE", "COLPO_NEGATIVE"],
-        "probabilities": function (year) {
-            return {
-                "CIN_LT_2": { "COLPO_NEGATIVE": 1.0, "COLPO_POSITIVE": 0.0 },
-                "CIN2": { "COLPO_NEGATIVE": 0.0, "COLPO_POSITIVE": 1.0 },
-                "CIN3": { "COLPO_NEGATIVE": 0.0, "COLPO_POSITIVE": 1.0 }
-            }
-        },
-    }],
     ["S1_Past_NILM", {
         "test": "S1_Past_NILM",
         "outcomes": ["NILM_X2", "LOW_GRADE", "HIGH_GRADE"],
@@ -261,6 +289,11 @@ const cytology = {
         "HIGH_GRADE": colpo
 
     }
+}
+
+export const adjustableTests = {
+    scenario1: ["Primary_HPV","Cytology","Colposcopy"],
+    scenario2: ["Primary_HPV","Colposcopy"],
 }
 
 export const newScenarios = {

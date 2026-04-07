@@ -12,11 +12,32 @@
         td, th {
             font-size: clamp(12px,1vw,16px);
         }
+        .settings-tab {
+            color: #6c757d !important; /* Muted grey */
+            border-bottom: 3px solid transparent !important;
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+        }
+
+        /* 2. The Active State (Triggered automatically by Bootstrap) */
+        .settings-tab.active {
+            color: #0d6efd !important;      /* Primary Blue Text */
+            border-bottom-color: #0d6efd !important; /* Primary Blue Underline */
+            font-weight: 700 !important;    /* Bold Text */
+            background-color: transparent !important;
+        }
+
+        /* 3. Hover State for better UX */
+        .setting-tab:hover:not(.active) {
+            color: #495057 !important;
+            border-bottom-color: #dee2e6 !important;
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
+        <div id="command-bar"></div>
         <ul class="nav nav-tabs" id="scenario" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="scenario-1" data-bs-toggle="tab" data-bs-target="#scenario-1-pane"
