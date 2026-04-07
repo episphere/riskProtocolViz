@@ -12,26 +12,31 @@ export class Test{
      * @returns {Object} runs each sample and returns an Object result (a sample for each test outcome) 
      *                   for each key
      */
-    runMultipleSamples(samples,year){
-        let probs = this.config.probabilities(year);
+    runMultipleSamples(multisample,year,customParams={}){
+        let probs = this.config.probabilities(year,customParams);
+        let sample_array = multisample.samples;
+
         function _has_all_keys(key){
+            let item=sample_array[key]
+            if (!Sample.isSample(item)) return false;
+
             let prob_keys=Object.keys(probs)
-            let sample_keys=Object.keys(samples[key].counts )
+            let sample_keys=Object.keys(item.counts )
             return sample_keys.every((k) => prob_keys.includes(k))
         }
 
 
-        let full_samples=Object.keys(samples).filter( (key) => _has_all_keys(key))
+        let full_samples=Object.keys(sample_array).filter( (key) => _has_all_keys(key))
         if (full_samples.length==0){
             throw new Error('NO SAMPLES are completely described by the test')
         }
-        let sample_from_total = Object.keys(samples).filter( (key) => !full_samples.includes(key))
+        let sample_from_total = Object.keys(sample_array).filter( (key) => !full_samples.includes(key))
 
         // Run the case where we don't need the totals...
         console.log("Run: ",full_samples," then Run using totals: ",sample_from_total)
         let results = full_samples.reduce((acc,key) => {
             console.log(`.... running ${key} sample for year ${year}`)
-            acc[key] = this.run(samples[key],year)
+            acc[key] = this.run(sample_array[key],year, customParams)
             return acc
         },{})
 
@@ -41,13 +46,22 @@ export class Test{
         let total = results[full_samples[0]];
         results = sample_from_total.reduce( (acc,key)=>{
             console.log(`.... still need to run ${key}.`)
-            acc[key] = this.run_given_total(samples[key],total,year)
+            acc[key] = this.run_given_total(sample_array[key],total,year, customParams)
             return acc
         },results)
 
-        console.log("results: ",results)
+        results = Object.values(results)
+        console.log(results)
+        let ms_results = this.outcomes.reduce( (acc,outcome) => {
+            let samples_for_this_outcome = results.map(r=>r[outcome])
+            console.log(".........",samples_for_this_outcome,"...",outcome)
+            acc[outcome] = Multisample.build_from_samples(samples_for_this_outcome,multisample.labels)
+            console.log(".........",acc[outcome])
+            return acc;
+        },{})
+        console.log("results: ",ms_results)
         console.log("bazinga!!")
-        return results
+        return ms_results
     }
 
     /**
@@ -58,20 +72,20 @@ export class Test{
      * @param {number} year - the year - needs for time-dependent parameters
      * @returns {Object} The test results - a Sample for all outcomes
      */
-    run(sample,year){
+    run(sample,year,customParams={}){
         if (Sample.isSample(sample)){
-            return this.run_sample(sample,year)
+            return this.run_sample(sample,year,customParams)
         }
-        if (Multisample.isMultisample){
-            return this.run_sample(sample,year)
+        if (Multisample.isMultisample(sample)){
+            return this.runMultipleSamples(sample,year,customParams)
         }
         throw new Error("Tests require a sample or Multisample")
 
         return null
     }
 
-    run_sample(sample,year){
-        let probs = this.config.probabilities(year);
+    run_sample(sample,year,customParams={}){
+        let probs = this.config.probabilities(year,customParams);
 
         // for each outcome create a sample
         return this.config.outcomes.reduce( (acc,outcome)=> {
@@ -102,8 +116,8 @@ export class Test{
      * @param {number} year - the year - needs for time-dependent parameters
      * @returns {Object} The test results - a Sample for all outcomes
      */
-    run_given_total(sample,complete,year){
-        let probs = this.config.probabilities(year);
+    run_given_total(sample,complete,year,customParams={}){
+        let probs = this.config.probabilities(year,customParams);
         let prob_keys = Object.keys(probs)
 
         // for each outcome create a sample - sometimes i dont care about part of the

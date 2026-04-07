@@ -1,8 +1,8 @@
-import { newScenarios, testMap, counts,isTest } from './scenarios.js'
+import { newScenarios, defaultTestMap, counts,isTest } from './scenarios.js'
 import {Sample, Multisample} from './sample.js'
 import { Test } from './test.js';
 
-
+let userParams= new Map();
 const max_iter = 10;
 function run_scenario(scenario, testMap, sample, year, iter = 0) {
     // avoid infinite recursion...
@@ -14,8 +14,9 @@ function run_scenario(scenario, testMap, sample, year, iter = 0) {
     if (isTest(scenario)){
         let test = Test.fromName(scenario.test,testMap)
         console.log(scenario.test)
-        console.table(test.config.probabilities(year))
-        let test_result = test.run(sample,year);
+        let customParams = userParams.get(scenario.test) || {};
+        console.table(test.config.probabilities(year,customParams))
+        let test_result = test.run(sample,year,customParams);
         if (scenario.scenarioName == "Primary HPV screening with extended genotyping triaged with Dual Stain"){
             console.log("================== ")
             console.log(test_result)
@@ -112,6 +113,15 @@ function getNextYearSample(expected_counts,year,actions,yearly_results){
     return Multisample.build_from_samples(cnts,["CIN_LT_2","CIN2","CIN3"])
 }
 
+
+function update_params(testName, param){
+    userParams.set(testName, param)
+}
+function reset_params(testName){
+    userParams.delete(testName)
+}
+
+
 // This is stuff that would in indx.js
 function buildTableTitleElement(innerHTML){
     let h4Element = document.createElement("h4");
@@ -130,13 +140,14 @@ HTMLTableRowElement.prototype.insertHead = function (index = -1) {
     return thElement;
 }
 
-function buildSampleTable(parentElement,title,sample,reset=false,scenarioName=""){
-    if (reset){
-        parentElement.innerText="";
-        let scenarioNameElement=buildTableTitleElement(scenarioName);        
-        scenarioNameElement.classList.add("text-center")
-        parentElement.insertAdjacentElement("beforeend",scenarioNameElement);
-    }
+function addScenarioName(parentElement,scenarioName){
+    parentElement.innerText="";
+    let scenarioNameElement=buildTableTitleElement(scenarioName);        
+    scenarioNameElement.classList.add("text-center")
+    parentElement.insertAdjacentElement("beforeend",scenarioNameElement);
+}
+
+function buildSampleTable(parentElement,title,sample){
 
     //add a table header..
     let titleElement=buildTableTitleElement(title);
@@ -344,15 +355,16 @@ function run_three_years(scenario, parentElement) {
     function run_single_year(sample,year){
         let currentSample=sample[year]
         let titleYear=(year==0)?'Initial Year':`Year ${year}`
-        buildSampleTable(parentElement,`${titleYear} Sample`,currentSample,year==0,scenario.scenarioName)
+        buildSampleTable(parentElement,`${titleYear} Sample`,currentSample)
         
-        scenario_results[year] = run_scenario(scenario, testMap, sample[year],year) ;
+        scenario_results[year] = run_scenario(scenario, defaultTestMap, sample[year],year) ;
         actions = update_actions(scenario_results[year],actions)
 
         buildResultsTable(parentElement,`${titleYear} Results`,scenario_results[year])
         return scenario_results;
     }
     
+    addScenarioName(parentElement,scenario.scenarioName)
     let initial_sample = Multisample.build(
         { CIN2: counts.CIN2.expected[0], CIN_LT_2: counts.initial_enrollment - counts.CIN2.expected[0] },
         {
@@ -370,8 +382,9 @@ function run_three_years(scenario, parentElement) {
     
 }
 
-function run_scenario1(){
+function run_scenario1(){  
     const scenario1Element = document.getElementById("scenario-1-pane");
+    buildParameterSetting(scenario1Element,1);
     let actions = {
         treat: [],
         followup: []
@@ -387,7 +400,7 @@ function run_scenario1(){
     let results=[]
     let scenario = newScenarios.scenario1_y0;
     buildSampleTable(scenario1Element,"Scenario 1 initial sample",sample[0],true,scenario.scenarioName)
-    results.push(run_scenario(scenario, testMap, sample[0],0) );
+    results.push(run_scenario(scenario, defaultTestMap, sample[0],0) );
     actions = update_actions(results[0],actions)
     buildResultsTable(scenario1Element,"Initial Year Results",results[0])
 
@@ -399,7 +412,7 @@ function run_scenario1(){
         let titleYear=`Year ${year}`
         buildSampleTable(scenario1Element,`${titleYear} Sample`,currentSample,false)
         
-        results[year] = run_scenario(scenario, testMap, sample[year],year) ;
+        results[year] = run_scenario(scenario, defaultTestMap, sample[year],year) ;
         actions = update_actions(results[year],actions)
         
         buildResultsTable(scenario1Element,`${titleYear} Results`,results[year])
@@ -418,3 +431,38 @@ const scenario6Element = document.getElementById("scenario-6-pane");
 run_three_years(newScenarios.scenario6, scenario6Element);
 
 run_scenario1()
+
+
+function buildParameterSetting(parentElement,scenario_number){
+    // outer card
+    let card = document.createElement("div");
+    card.classList.add("card", "mb-2");
+
+    // card header — acts as the toggle button
+    let header = document.createElement("div");
+    header.classList.add("card-header");
+    header.style.cursor = "pointer";
+    header.style.userSelect = "none";
+    header.innerText = "Group One";
+    header.dataset.bsToggle = "collapse";
+    header.dataset.bsTarget = `#collapse_${scenario_number}`;
+    header.setAttribute("aria-expanded", "true");
+    header.setAttribute("aria-controls", `collapse_${scenario_number}`);
+
+    // collapsible wrapper
+    let collapseDiv = document.createElement("div");
+    collapseDiv.id = `collapse_${scenario_number}`;
+    collapseDiv.classList.add("collapse", "show");
+
+    // card body inside the collapse
+    let body = document.createElement("div");
+    body.classList.add("card-body");
+    body.innerText = "Your parameters go here.";
+
+    // assemble
+    collapseDiv.insertAdjacentElement("beforeend", body);
+    card.insertAdjacentElement("beforeend", header);
+    card.insertAdjacentElement("beforeend", collapseDiv);
+    parentElement.insertAdjacentElement("beforeend", card);
+
+}

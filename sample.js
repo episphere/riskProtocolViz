@@ -152,10 +152,6 @@ export class Multisample {
         return x
     }
 
-    static build_from_counts(labelMap,cntObj){
-        
-    }
-
     buildCountArray(){
         return this.labels.reduce( (acc,label)=>{
             let sampleIndex=this.labelMap[label]
