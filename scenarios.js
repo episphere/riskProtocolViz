@@ -80,15 +80,15 @@ export const defaultTestMap = new Map([
             if (year == 0) {
                 return {
                     "CIN_LT_2": { "HR12": 0.8391687860790*(1-CIN2.specificity), "HPV16": 0.1150390857230*(1-CIN2.specificity), "HPV18": 0.0457921281981*(1-CIN2.specificity), "HPV_NEGATIVE": CIN2.specificity },
-                    "CIN2": { "HR12": 0.56944802837317, "HPV16": 0.338358458450934, "HPV18": 0.0691935131758958, "HPV_NEGATIVE": 1-CIN2.sensitivity },
-                    "CIN3": { "HR12": 0.438982641950655, "HPV16": 0.464364750925894, "HPV18": 0.067652607, "HPV_NEGATIVE": 1-CIN3.sensitivity },
+                    "CIN2": { "HR12": 0.5828536626133*CIN2.sensitivity, "HPV16": 0.3463239083428*CIN2.sensitivity, "HPV18": 0.0708224290439*CIN2.sensitivity, "HPV_NEGATIVE": 1-CIN2.sensitivity },
+                    "CIN3": { "HR12": 0.4520933490738*CIN3.sensitivity, "HPV16": 0.4782335230957*CIN3.sensitivity, "HPV18": 0.0696731278305*CIN3.sensitivity, "HPV_NEGATIVE": 1-CIN3.sensitivity },
                 }
             }
 
             return {
-                "CIN_LT_2": { "HR12": 0.356646734083556, "HPV16": 0.0488916114322609000000, "HPV18": 0.0194616544841831000000, "HPV_NEGATIVE": 0.575 },
-                "CIN2": { "HR12": 0.56944802837317, "HPV16": 0.338358458450934, "HPV18": 0.0691935131758958, "HPV_NEGATIVE": 0.023 },
-                "CIN3": { "HR12": 0.438982641950655, "HPV16": 0.464364750925894, "HPV18": 0.067652607, "HPV_NEGATIVE": 0.029 },
+                "CIN_LT_2": { "HR12": 0.8391687860790*(1-CIN2.followup_specificity), "HPV16": 0.1150390857230*(1-CIN2.followup_specificity), "HPV18": 0.0457921281981*(1-CIN2.followup_specificity), "HPV_NEGATIVE": CIN2.followup_specificity },
+                "CIN2": { "HR12": 0.5828536626133*CIN2.sensitivity, "HPV16": 0.3463239083428*CIN2.sensitivity, "HPV18": 0.0708224290439*CIN2.sensitivity, "HPV_NEGATIVE": 1-CIN2.sensitivity },
+                "CIN3": { "HR12": 0.4520933490738*CIN3.sensitivity, "HPV16": 0.4782335230957*CIN3.sensitivity, "HPV18": 0.0696731278305*CIN3.sensitivity, "HPV_NEGATIVE": 1-CIN3.sensitivity},
             }
         },
     }],
@@ -294,6 +294,8 @@ const cytology = {
 export const adjustableTests = {
     scenario1: ["Primary_HPV","Cytology","Colposcopy"],
     scenario2: ["Primary_HPV","Colposcopy"],
+    scenario3: ["HPV_Partial_genotyping","Colposcopy"],
+    scenario4: ["HPV_Partial_genotyping","Colposcopy"],
 }
 
 export const newScenarios = {

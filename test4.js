@@ -525,8 +525,10 @@ function buildParameterSetting(parentElement, scenario_key) {
         const navItem = document.createElement('li');
         navItem.className = 'nav-item';
         navItem.innerHTML = `
-            <button class="settings-tab nav-link border-0 border-bottom border-3" 
-                data-bs-toggle="tab" data-bs-target="#${safeId}" type="button" role="tab">
+            <button class="settings-tab nav-link border-0 border-bottom border-3 ${isActive ? 'active' : ''}" 
+                data-bs-toggle="tab" data-bs-target="#${safeId}" 
+                aria-controls="${safeId}" aria-selected="${isActive}"
+                type="button" role="tab">
                 ${test_key.replace(/_/g, ' ')}
             </button>
         `;
