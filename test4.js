@@ -365,7 +365,7 @@ function run_three_years(scenario_key, parentElement) {
     }
     
     buildParameterSetting(parentElement,scenario_key);
-    addScenarioName(parentElement,scenario.scenarioName)
+    //addScenarioName(parentElement,scenario.scenarioName)
     let initial_sample = Multisample.build(
         { CIN2: counts.CIN2.expected[0], CIN_LT_2: counts.initial_enrollment - counts.CIN2.expected[0] },
         {
@@ -400,7 +400,7 @@ function run_scenario1(){
     let results=[]
     let scenario = newScenarios.scenario1_y0;
     buildParameterSetting(scenario1Element,"scenario1");
-    addScenarioName(scenario1Element,scenario.scenarioName)
+    //addScenarioName(scenario1Element,scenario.scenarioName)
     buildSampleTable(scenario1Element,"Scenario 1 initial sample",sample[0],true,scenario.scenarioName)
     results.push(run_scenario(scenario, defaultTestMap, sample[0],0) );
     actions = update_actions(results[0],actions)
@@ -457,12 +457,12 @@ function buildCommandLine(){
     const resetAllBtn = document.createElement('button');
     resetAllBtn.className = 'btn btn-outline-secondary btn-sm border-0';
     resetAllBtn.style.fontSize = '0.7rem';
-    resetAllBtn.textContent = 'Reset All Overrides';
+    resetAllBtn.textContent = 'Reset All Test Parameters';
     resetAllBtn.onclick = () => {
-        if(confirm("Clear all custom parameters?")) {
+        //if(confirm("Clear all custom parameters?")) {
             userParams.clear();
             location.reload(); // Hard reset to refresh UI states
-        }
+        //}
     };
 
     const rerunBtn = document.createElement('button');
@@ -479,8 +479,152 @@ function buildCommandLine(){
 
     return container;
 }
-
 function buildParameterSetting(parentElement, scenario_key) {
+    parentElement.innerHTML = '';
+    const config = adjustableTests[scenario_key];
+    if (!config) return;
+    const scenario_name = newScenarios[scenario_key].scenarioName;
+
+    // 1. Create the Toggle Button (with Unicode Gear)
+    const toggleBtn = document.createElement('button');
+    toggleBtn.className = 'btn btn-small btn-outline-secondary border-0 btn-sm mb-2 fw-bold d-flex align-items-center';
+    toggleBtn.type = 'button';
+    toggleBtn.setAttribute('data-bs-toggle', 'collapse');
+    const collapseId = `collapse-settings-${scenario_key}`;
+    toggleBtn.setAttribute('data-bs-target', `#${collapseId}`);
+    toggleBtn.innerHTML = `<span class="me-0" style="font-size: 1.1rem;">&#9881;</span>`;
+    // 1.a Wrap the Toggle Button and the scenario title in a grid...
+    const toolbarDiv = document.createElement("div");
+    toolbarDiv.className='d-grid align-items-center mb-3';
+    toolbarDiv.style.gridTemplateColumns = 'min-content 1fr min-content';
+    toolbarDiv.innerHTML=`
+    <div class="invisible" aria-hidden="true">
+        <button class="btn btn-sm btn-outline-secondary border-0 px-2" tabindex="-1">
+            <span class="me-0" style="font-size: 1.1rem;">&#9881;</span>
+        </button>
+    </div>
+    <div class="text-center px-3">
+        <h5 class="fw-bold mb-0">${scenario_name}</h5>
+    </div>
+    <div class="text-end" id="btn-slot-${scenario_key}"></div>
+    `
+    toolbarDiv.querySelector(`#btn-slot-${scenario_key}`).insertAdjacentElement("beforeend",toggleBtn)
+
+
+    // 2. Create the Collapse Container
+    const collapseWrapper = document.createElement('div');
+    collapseWrapper.className = 'collapse mb-4';
+    collapseWrapper.id = collapseId;
+
+    // 3. Inner card-style body for the tabs
+    collapseWrapper.innerHTML = `
+        <div class="card card-body bg-light border-0 shadow-sm p-3">
+            <ul class="nav nav-tabs border-bottom-0 mb-3" id="tablist-${scenario_key}" role="tablist" style="font-size: 0.75rem;">
+            </ul>
+            <div class="tab-content" id="content-${scenario_key}">
+            </div>
+        </div>
+    `;
+
+    parentElement.appendChild(toolbarDiv);
+    parentElement.appendChild(collapseWrapper);
+
+    // 4. Grab references to the new containers
+    const tabList = collapseWrapper.querySelector(`#tablist-${scenario_key}`);
+    const tabContent = collapseWrapper.querySelector(`#content-${scenario_key}`);
+
+    // 5. Loop through and build Nav + Panes
+    config.forEach((test_key, index) => {
+        const isActive = index === 0;
+        const safeId = `pane-${scenario_key}-${test_key.replace(/\s+/g, '-')}`;
+
+        // Create the Tab Link (Underline Style)
+        const navItem = document.createElement('li');
+        navItem.className = 'nav-item';
+        navItem.innerHTML = `
+            <button class="settings-tab nav-link border-0 border-bottom border-3 ${isActive ? 'active fw-bold' : ''}" 
+                data-bs-toggle="tab" data-bs-target="#${safeId}" 
+                aria-controls="${safeId}" aria-selected="${isActive}"
+                type="button" role="tab">
+                ${test_key.replace(/_/g, ' ')}
+            </button>
+        `;
+        tabList.appendChild(navItem);
+
+        // Create the Pane
+        const pane = document.createElement('div');
+        pane.className = `tab-pane fade ${isActive ? 'show active' : ''}`;
+        pane.id = safeId;
+
+        // 6. Build the Test UI and append it to the LIVE pane
+        const testUI = buildTestUI(scenario_key, test_key);
+        pane.appendChild(testUI);
+        tabContent.appendChild(pane);
+    });
+}
+
+
+
+function buildTestUI(scenario_key, test_key) {
+    const testContainer = document.createElement('div');
+    // REMOVED 'card' from classList if you want a flatter look, 
+    // but kept it here as requested to maintain the "card look"
+    testContainer.classList.add('card', 'border-0', 'shadow-sm', 'p-3', 'rounded-3', 'bg-white');
+
+    const headerWrapper = document.createElement('div');
+    // Hide the header text if the tab name already covers it, or keep for clarity
+    headerWrapper.className = 'd-flex justify-content-between align-items-center border-bottom pb-2 mb-2';
+
+    const header = document.createElement('h6');
+    header.className = 'fw-bold text-primary mb-0';
+    header.style.fontSize = '0.85rem';
+    header.textContent = `${test_key.replace(/_/g, ' ')} Parameters`;
+    
+    // ... (rest of resetBtn logic remains the same)
+    const resetBtn = document.createElement('button');
+    resetBtn.className = 'btn btn-link btn-sm text-muted p-0 text-decoration-none';
+    resetBtn.style.fontSize = '0.65rem';
+    resetBtn.innerHTML = '&#8634; Reset to Defaults';
+    resetBtn.onclick = () => resetTestInputs(testContainer);
+
+    headerWrapper.appendChild(header);
+    headerWrapper.appendChild(resetBtn);
+    testContainer.appendChild(headerWrapper);
+
+    const paramsMap = defaultTestParameters.get(test_key);
+    const activeParamsMap = userParams.get(test_key) ?? defaultTestParameters.get(test_key);
+    if (paramsMap) {
+        for (const [category, activeParams] of Object.entries(activeParamsMap)) {
+            let defaultParams = paramsMap[category];
+            const catRow = document.createElement('div');
+            catRow.classList.add('mt-3');
+
+            // Category Label (CIN2, CIN3)
+            const catLabel = document.createElement('div');            
+            catLabel.className = 'small fw-bold text-muted text-uppercase mb-1';
+            catLabel.style.fontSize = '0.65rem';
+            catLabel.textContent = category;
+            catRow.appendChild(catLabel);
+
+            const inputFlexWrapper = document.createElement('div');
+            inputFlexWrapper.classList.add('d-flex', 'flex-row', 'flex-wrap', 'gap-2')
+
+             for (const [paramName, value] of Object.entries(activeParams)) {
+                const defaultValue = defaultParams[paramName];
+                // Create the compact input group
+                const inputGroup = createCompactInput(test_key, category, paramName, value, defaultValue);
+                inputFlexWrapper.appendChild(inputGroup);
+            }
+
+            catRow.appendChild(inputFlexWrapper);
+            testContainer.appendChild(catRow);
+        }
+    }
+    return testContainer;
+}
+
+/*
+function buildParameterSetting_V1(parentElement, scenario_key) {
     parentElement.innerHTML = '';
     const config = adjustableTests[scenario_key];
     if (!config) return;
@@ -545,67 +689,7 @@ function buildParameterSetting(parentElement, scenario_key) {
         tabContent.appendChild(pane);
     });
 }
-
-function buildTestUI(scenario_key, test_key) {
-    const testContainer = document.createElement('div');
-    // REMOVED 'card' from classList if you want a flatter look, 
-    // but kept it here as requested to maintain the "card look"
-    testContainer.classList.add('card', 'border-0', 'shadow-sm', 'p-3', 'rounded-3', 'bg-white');
-
-    const headerWrapper = document.createElement('div');
-    // Hide the header text if the tab name already covers it, or keep for clarity
-    headerWrapper.className = 'd-flex justify-content-between align-items-center border-bottom pb-2 mb-2';
-
-    const header = document.createElement('h6');
-    header.className = 'fw-bold text-primary mb-0';
-    header.style.fontSize = '0.85rem';
-    header.textContent = `${test_key.replace(/_/g, ' ')} Parameters`;
-    
-    // ... (rest of resetBtn logic remains the same)
-    const resetBtn = document.createElement('button');
-    resetBtn.className = 'btn btn-link btn-sm text-muted p-0 text-decoration-none';
-    resetBtn.style.fontSize = '0.65rem';
-    resetBtn.innerHTML = '&#8634; Reset to Defaults';
-    resetBtn.onclick = () => resetTestInputs(testContainer);
-
-    headerWrapper.appendChild(header);
-    headerWrapper.appendChild(resetBtn);
-    testContainer.appendChild(headerWrapper);
-
-    const paramsMap = defaultTestParameters.get(test_key);
-    const activeParamsMap = userParams.get(test_key) ?? defaultTestParameters.get(test_key);
-    if (paramsMap) {
-        for (const [category, activeParams] of Object.entries(activeParamsMap)) {
-            let defaultParams = paramsMap[category];
-            const catRow = document.createElement('div');
-            catRow.classList.add('mt-3');
-
-            // Category Label (CIN2, CIN3)
-            const catLabel = document.createElement('div');            
-            catLabel.className = 'small fw-bold text-muted text-uppercase mb-1';
-            catLabel.style.fontSize = '0.65rem';
-            catLabel.textContent = category;
-            catRow.appendChild(catLabel);
-
-            const inputFlexWrapper = document.createElement('div');
-            inputFlexWrapper.classList.add('d-flex', 'flex-row', 'flex-wrap', 'gap-2')
-
-             for (const [paramName, value] of Object.entries(activeParams)) {
-                const defaultValue = defaultParams[paramName];
-                // Create the compact input group
-                const inputGroup = createCompactInput(test_key, category, paramName, value, defaultValue);
-                inputFlexWrapper.appendChild(inputGroup);
-            }
-
-            catRow.appendChild(inputFlexWrapper);
-            testContainer.appendChild(catRow);
-        }
-    }
-    return testContainer;
-}
-
-/*
-function buildParameterSetting(parentElement,scenario_key){
+function buildParameterSetting_V0(parentElement,scenario_key){
     parentElement.innerHTML = '';
     const config = adjustableTests[scenario_key];
     if (!config) return;
